@@ -1,6 +1,7 @@
 import {Injectable} from "@angular/core";
 import {HttpClient, HttpErrorResponse} from "@angular/common/http";
-import {catchError, throwError} from "rxjs";
+import {catchError, Subject, tap, throwError} from "rxjs";
+import {User} from "./user.model";
 
 export interface AuthResponseData {
   kind: string;
@@ -14,6 +15,7 @@ export interface AuthResponseData {
 
 @Injectable({providedIn: 'root'})
 export class AuthService {
+  loggedUser: Subject<User> = new Subject<User>();
 
   constructor(private httpClient: HttpClient) {
 
@@ -34,7 +36,9 @@ export class AuthService {
 
     return this.httpClient.post<AuthResponseData>('https://identitytoolkit.googleapis.com/v1/accounts:signUp',
       postData,
-      postOptions).pipe(catchError(this.handleError));
+      postOptions).pipe(catchError(this.handleError), tap(responseData => {
+      this.handleAuthentication(responseData.email, responseData.localId, responseData.idToken, +responseData.expiresIn);
+    })); // tap allows to manipulate data without changing the response
   }
 
   login(authEmail: string, authPassword: string) {
@@ -52,7 +56,16 @@ export class AuthService {
 
     return this.httpClient.post<AuthResponseData>('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword',
       postData,
-      postOptions).pipe(catchError(this.handleError));
+      postOptions).pipe(catchError(this.handleError),
+      tap(responseData => {
+        this.handleAuthentication(responseData.email, responseData.localId, responseData.idToken, +responseData.expiresIn);
+      })); // tap allows to manipulate data without changing the response
+  }
+
+  private handleAuthentication(email: string, userId: string, token: string, expiresIn: number) {
+    const expirationDate = new Date(new Date().getTime() + expiresIn * 1000); // converts the response data to milliseconds and then add to current time
+    const user = new User(email, userId, token, expirationDate);
+    this.loggedUser.next(user);
   }
 
   private handleError(errorResponse: HttpErrorResponse) {

@@ -30,7 +30,7 @@ export class AuthComponent {
     this.isLoading = true;
     this.error = '';
 
-    let authObservable: Observable<AuthResponseData> = new Observable<AuthResponseData>();
+    let authObservable: Observable<AuthResponseData>;
 
     if (this.isLoginMode) {
       authObservable = this.authService.login(email, password);

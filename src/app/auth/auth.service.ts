@@ -2,6 +2,7 @@ import {Injectable} from "@angular/core";
 import {HttpClient, HttpErrorResponse} from "@angular/common/http";
 import {BehaviorSubject, catchError, Subject, tap, throwError} from "rxjs";
 import {User} from "./user.model";
+import {Router} from "@angular/router";
 
 export interface AuthResponseData {
   kind: string;
@@ -18,7 +19,7 @@ export class AuthService {
   loggedUser: BehaviorSubject<null | User> = new BehaviorSubject<null | User>(null); // behaviorSubject will emit the latest value when a new subscriber listens
   token: string = '';
 
-  constructor(private httpClient: HttpClient) {
+  constructor(private httpClient: HttpClient, private router: Router) {
 
   }
 
@@ -61,6 +62,11 @@ export class AuthService {
       tap(responseData => {
         this.handleAuthentication(responseData.email, responseData.localId, responseData.idToken, +responseData.expiresIn);
       })); // tap allows to manipulate data without changing the response
+  }
+
+  logout() {
+    this.loggedUser.next(null);
+    this.router.navigate(['/auth']);
   }
 
   private handleAuthentication(email: string, userId: string, token: string, expiresIn: number) {

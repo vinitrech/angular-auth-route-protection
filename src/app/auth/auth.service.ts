@@ -1,6 +1,6 @@
 import {Injectable} from "@angular/core";
 import {HttpClient, HttpErrorResponse} from "@angular/common/http";
-import {catchError, Subject, tap, throwError} from "rxjs";
+import {BehaviorSubject, catchError, Subject, tap, throwError} from "rxjs";
 import {User} from "./user.model";
 
 export interface AuthResponseData {
@@ -15,7 +15,8 @@ export interface AuthResponseData {
 
 @Injectable({providedIn: 'root'})
 export class AuthService {
-  loggedUser: Subject<User> = new Subject<User>();
+  loggedUser: BehaviorSubject<null | User> = new BehaviorSubject<null | User>(null); // behaviorSubject will emit the latest value when a new subscriber listens
+  token: string = '';
 
   constructor(private httpClient: HttpClient) {
 

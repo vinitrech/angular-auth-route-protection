@@ -64,7 +64,35 @@ export class AuthService {
       })); // tap allows to manipulate data without changing the response
   }
 
+  autoLogin() {
+    if (!localStorage.getItem('userData')) {
+      return;
+    }
+
+    const userData: {
+      email: string,
+      id: string,
+      _token: string,
+      _tokenExpirationDate: string
+      // @ts-ignore <- added ignore due to the fact that the localstorage item will never be null when it reaches this point
+    } = JSON.parse(localStorage.getItem('userData'));
+
+    const loadedUser = new User(
+      userData.email,
+      userData.id,
+      userData._token,
+      new Date(userData._tokenExpirationDate)
+    );
+
+    if (loadedUser.token) {
+      this.loggedUser.next(loadedUser);
+    }else{
+      localStorage.removeItem('userData');
+    }
+  }
+
   logout() {
+    localStorage.removeItem('userData');
     this.loggedUser.next(null);
     this.router.navigate(['/auth']);
   }
@@ -73,6 +101,7 @@ export class AuthService {
     const expirationDate = new Date(new Date().getTime() + expiresIn * 1000); // converts the response data to milliseconds and then add to current time
     const user = new User(email, userId, token, expirationDate);
     this.loggedUser.next(user);
+    localStorage.setItem('userData', JSON.stringify(user));
   }
 
   private handleError(errorResponse: HttpErrorResponse) {
